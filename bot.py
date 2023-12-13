@@ -22,6 +22,12 @@ def get_preference(guild_id, key):
         data = json.load(file)
         return data.get(str(guild_id), {}).get(key)
     
+def log_firebase(players:list):
+    pass
+    
+def log_message(players:list):
+    pass
+
 async def send_message(ctx, message: str):
     channel_id = get_preference(ctx.guild.id, 'output_channel')
     if channel_id:
