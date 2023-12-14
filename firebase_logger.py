@@ -22,9 +22,9 @@ class FirebaseClient:
                     'player_name':player.name,
                     'player_joined_date':player.joined_at,
                     'sessions_played':0,
-                    'latest_session':None,
+                    'latest_session':player.joined_at,
                     'sessions_dmed':0,
-                    'latest_session_dmed':None
+                    'latest_session_dmed':player.joined_at
                 })
                 count += 1
         return count
@@ -47,8 +47,33 @@ class FirebaseClient:
                 'sessions_played': sessions+1,
                 'latest_session': datetime.now()
             })
-        
     
+    def get_inactive_players(self, collection, players: list):
+        inactive_players = []
+        cur_date = datetime.now()
+        for player in players:
+            doc_ref = collection.document(str(player.id))
+            activity = cur_date - doc_ref.to_dict()['latest_session']
+            if activity.days > 60:
+                inactive_players.append(player)
+        return inactive_players
+    
+    def get_inactive_gms(self, collection, gms: list):
+        inactive_gms = []
+        cur_date = datetime.now()
+        for gm in gms:
+            doc_ref = collection.document(str(gm.id))
+            activity = cur_date - doc_ref.to_dict()['latest_session_dmed']
+            if activity.days > 60:
+                inactive_gms.append(gm)
+        return inactive_gms
+    
+    def store_preference(self, json_data, collection_name):
+        collection_ref = self.db.collection(collection_name)
+        for key, value in json_data.items():
+            document_ref = collection_ref.document(key)
+            document_ref.set(value)
+
 # client = FirebaseClient(Secrets.FIREBASE_CRED_PATH)
 # test_collection = client.get_collection()
 # client.log_players(test_collection,[308948674271248385,1,2])
