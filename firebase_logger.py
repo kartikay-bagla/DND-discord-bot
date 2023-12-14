@@ -1,6 +1,7 @@
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
+from datetime import datetime
 import Secrets
 
 class FirebaseClient:
@@ -27,6 +28,25 @@ class FirebaseClient:
                 })
                 count += 1
         return count
+
+    def log_session(self, collection, players, gm):
+        self.log_players(collection,players)
+        doc_ref = collection.document(str(gm.id))
+        sessions_played = doc_ref.get().to_dict()['sessions_played']
+        sessions_dmed = doc_ref.get().to_dict()['sessions_dmed']
+        doc_ref.update({
+            'sessions_played': sessions_played+1,
+            'latest_session': datetime.now(),
+            'sessions_dmed': sessions_dmed+1,
+            'latest_session_dmed': datetime.now()
+        })
+        for player in players:
+            doc_ref = collection.document(str(player.id))
+            sessions = doc_ref.get().to_dict()['sessions_played']
+            doc_ref.update({
+                'sessions_played': sessions+1,
+                'latest_session': datetime.now()
+            })
         
     
 # client = FirebaseClient(Secrets.FIREBASE_CRED_PATH)
