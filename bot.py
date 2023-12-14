@@ -5,6 +5,7 @@ import Secrets
 import json
 from firebase_logger import FirebaseClient
 meta_file = 'meta.json'
+meta_collection = 'metadata'
 
 # Firebase setup
 fclient = FirebaseClient(Secrets.FIREBASE_CRED_PATH)
@@ -14,11 +15,16 @@ intents = discord.Intents.all()
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # util functions
+def get_preference_firestore():
+    data = fclient.get_preference(meta_collection)
+    with open(meta_file, 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
 def save_preference(guild_id, preference_type, preference_id):
     with open(meta_file, 'r') as file:
         data = json.load(file)
     data[str(guild_id)][preference_type] = preference_id
-    fclient.store_preference(data, 'metadata')
+    fclient.set_preference(data, meta_collection)
     with open(meta_file, 'w') as file:
         json.dump(data, file, indent=4)
         

@@ -2,7 +2,6 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import datetime
-import Secrets
 
 class FirebaseClient:
     def __init__(self,creds_path):
@@ -68,12 +67,15 @@ class FirebaseClient:
                 inactive_gms.append(gm)
         return inactive_gms
     
-    def store_preference(self, json_data, collection_name):
+    def set_preference(self, json_data, collection_name):
         collection_ref = self.db.collection(collection_name)
         for key, value in json_data.items():
             document_ref = collection_ref.document(key)
             document_ref.set(value)
 
-# client = FirebaseClient(Secrets.FIREBASE_CRED_PATH)
-# test_collection = client.get_collection()
-# client.log_players(test_collection,[308948674271248385,1,2])
+    def get_preference(self, collection_name):
+        collection_ref = self.db.collection(collection_name)
+        data = {}
+        for doc in collection_ref.stream():
+            data[doc.id] = doc.to_dict()
+        return data
