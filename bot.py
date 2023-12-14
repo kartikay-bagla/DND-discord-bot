@@ -1,6 +1,5 @@
 import discord
 from discord.ext import commands
-from datetime import datetime
 import Secrets
 import json
 from firebase_logger import FirebaseClient
@@ -97,7 +96,7 @@ async def set_role(ctx, role_for: str, role: discord.Role):
 @bot.command(name='setchannel')
 async def set_channel(ctx, channel: discord.TextChannel):
     save_preference(ctx.guild.id, 'channel', channel.id)
-    await send_message(f'Output channel set to {channel.mention}')
+    await send_message(ctx, f'Output channel set to {channel.mention}')
 
 @bot.command(name='loadmembers')
 async def set_logger(ctx):
@@ -128,7 +127,7 @@ async def log_session(ctx, *players: discord.Member):
         print('No players entered')
     else:
         fcollection = fclient.get_collection(str(ctx.guild.id))
-        fclient.log_session(fcollection, players, ctx.author)
+        fclient.log_session(fcollection,list(players), ctx.author)
         message = f'Session logged for:\n'
         ps = [i.id for i in players]
         print(f"logged session for : {ps}")

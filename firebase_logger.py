@@ -2,6 +2,7 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import firestore
 from datetime import datetime
+from datetime import timezone
 
 class FirebaseClient:
     def __init__(self,creds_path):
@@ -19,47 +20,45 @@ class FirebaseClient:
             if not doc_ref.get().exists:
                 doc_ref.set({
                     'player_name':player.name,
-                    'player_joined_date':player.joined_at,
+                    'player_joined_date':player.joined_at.astimezone(timezone.utc),
                     'sessions_played':0,
-                    'latest_session':player.joined_at,
+                    'latest_session':player.joined_at.astimezone(timezone.utc),
                     'sessions_dmed':0,
-                    'latest_session_dmed':player.joined_at
+                    'latest_session_dmed':player.joined_at.astimezone(timezone.utc)
                 })
                 count += 1
         return count
 
-    def log_session(self, collection, players, gm):
+    def log_session(self, collection, players : list, gm):
+        players.append(gm)
         self.log_players(collection,players)
         doc_ref = collection.document(str(gm.id))
-        sessions_played = doc_ref.get().to_dict()['sessions_played']
         sessions_dmed = doc_ref.get().to_dict()['sessions_dmed']
         doc_ref.update({
-            'sessions_played': sessions_played+1,
-            'latest_session': datetime.now(),
             'sessions_dmed': sessions_dmed+1,
-            'latest_session_dmed': datetime.now()
+            'latest_session_dmed': datetime.now(timezone.utc)
         })
         for player in players:
             doc_ref = collection.document(str(player.id))
             sessions = doc_ref.get().to_dict()['sessions_played']
             doc_ref.update({
                 'sessions_played': sessions+1,
-                'latest_session': datetime.now()
+                'latest_session': datetime.now(timezone.utc)
             })
     
     def get_inactive_players(self, collection, players: list):
         inactive_players = []
-        cur_date = datetime.now()
+        cur_date = datetime.now(timezone.utc)
         for player in players:
             doc_ref = collection.document(str(player.id))
-            activity = cur_date - doc_ref.to_dict()['latest_session']
+            activity = cur_date - doc_ref.get().to_dict()['latest_session']
             if activity.days > 60:
                 inactive_players.append(player)
         return inactive_players
     
     def get_inactive_gms(self, collection, gms: list):
         inactive_gms = []
-        cur_date = datetime.now()
+        cur_date = datetime.now(timezone.utc)
         for gm in gms:
             doc_ref = collection.document(str(gm.id))
             activity = cur_date - doc_ref.to_dict()['latest_session_dmed']
