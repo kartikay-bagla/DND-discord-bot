@@ -58,6 +58,8 @@ async def send_message(ctx, message: str):
 async def on_ready():
     print('-'*50)
     print(f'{bot.user} has connected to Discord!')
+    get_preference_firestore()
+    print('retreived')
     print('-'*50)
 
 # test command
@@ -70,26 +72,27 @@ async def on_hello(ctx):
 
 # server specific setup
 @bot.command(name='setrole')
-async def set_role(ctx, role_for: str, role: discord.Role):
+async def set_role(ctx, role_for: str, *roles: discord.Role):
     print('-'*50)
     if role_for == 'player':
-        save_preference(ctx.guild.id, 'player_role', role.id)
+        save_preference(ctx.guild.id, 'player_role', [role.id for role in roles])
     elif role_for == 'gm':
-        save_preference(ctx.guild.id, 'gm_role', role.id)
+        save_preference(ctx.guild.id, 'gm_role', [role.id for role in roles])
     elif role_for == 'suspend':
-        save_preference(ctx.guild.id, 'suspended_role', role.id)
+        save_preference(ctx.guild.id, 'suspended_role', [role.id for role in roles])
     elif role_for == 'mod':
-        save_preference(ctx.guild.id, 'mod_role', role.id)
+        save_preference(ctx.guild.id, 'mod_role', [role.id for role in roles])
     else:
         await send_message(ctx,f'select valid rolefor : player, gm, suspended, mod')
         print('select valid option')
         print('-'*50)
         return
     print(f'set role for {role_for}')
-    if role.mentionable:
-        await send_message(ctx,f'{role_for} role set to {role.mention}')
-    else:
-        await send_message(ctx,f'{role_for} role set to {role.name}')
+    for role in roles:
+        if role.mentionable:
+            await send_message(ctx,f'{role_for} role set to {role.mention}')
+        else:
+            await send_message(ctx,f'{role_for} role set to {role.name}')
     print('-'*50)
 
 
