@@ -36,11 +36,13 @@ def log_firebase(ctx, players:list):
     fcollection = fclient.get_collection(str(ctx.guild.id))
     return fclient.log_players(fcollection, players)
 
-def get_role(ctx, role_name: str):
-    role_id = get_preference(ctx.guild.id, role_name)
-    for i in ctx.guild.roles:
-        if i.id == role_id:
-            return i
+def get_roles(ctx, role_name: str):
+    roles = get_preference(ctx.guild.id, role_name)
+    for role_id in roles:
+        for i in ctx.guild.roles:
+            if i.id == role_id:
+                yield i
+                break
 
 async def send_message(ctx, message: str):
     channel_id = get_preference(ctx.guild.id, 'output_channel')
@@ -104,9 +106,11 @@ async def set_channel(ctx, channel: discord.TextChannel):
 @bot.command(name='loadmembers')
 async def set_logger(ctx):
     print('-'*50)
-    player_role = get_role(ctx, 'player_role')
-    if player_role:
-        dnd_players = [i for i in ctx.guild.members if (not i.bot) and(player_role in i.roles)]
+    player_roles = get_roles(ctx, 'player_role')
+    if player_roles:
+        dnd_players = []
+        for player_role in player_roles:
+            dnd_players.append([i for i in ctx.guild.members if (not i.bot) and (player_role in i.roles)])
         count = log_firebase(ctx, dnd_players)
         print(f'{count} players logged')
         await send_message(ctx,f'{count} players logged')
@@ -118,11 +122,11 @@ async def set_logger(ctx):
 @bot.command(name='logsession')
 async def log_session(ctx, *players: discord.Member):
     print('-'*50)
-    gm_role = get_role(ctx, 'gm_role')
-    if not gm_role:
+    gm_roles = get_roles(ctx, 'gm_role')
+    if not gm_roles:
         await send_message(ctx,'No gm role set')
         print('No gm role set')
-    elif gm_role not in ctx.author.roles:
+    elif gm_roles not in ctx.author.roles:
         await send_message(ctx,'Command can only be used by gms')
         print('Command can only be used by gms')
     elif not players:
@@ -144,22 +148,24 @@ async def log_session(ctx, *players: discord.Member):
 @bot.command(name='purgeinactive')
 async def purge_inactive(ctx):
     print('-'*50)
-    mod_role = get_role(ctx, 'mod_role')
-    if mod_role not in ctx.author.roles:
+    mod_roles = get_roles(ctx, 'mod_role')
+    if mod_roles not in ctx.author.roles:
         print('insufficient permissions')
         await send_message(ctx, 'you must be a mod to run this command')
         return
-    player_role = get_role(ctx, 'player_role')
-    gm_role = get_role(ctx, 'gm_role')
-    suspended_role = get_role(ctx, 'suspended_role')
-    if player_role and mod_role and gm_role and suspended_role:
-        test_players = [i for i in ctx.guild.members if (player_role in i.roles) and (mod_role not in i.roles)]
+    player_roles = get_roles(ctx, 'player_role')
+    gm_roles = get_roles(ctx, 'gm_role')
+    suspended_roles = get_roles(ctx, 'suspended_role')
+    if player_roles and mod_roles and gm_roles and suspended_roles:
+        test_players = []
+        for player_role in player_roles:
+            test_players.append([i for i in ctx.guild.members if (player_role in i.roles) and (mod_roles[0] not in i.roles)])
         fcollection = fclient.get_collection(str(ctx.guild.id))
         inactive = fclient.get_inactive_players(fcollection,test_players)
         message = 'pruged : \n'
         for player in inactive:
-            await player.remove_roles(player_role, gm_role)
-            await player.add_roles(suspended_role)
+            await player.remove_roles(*player_roles, *gm_roles)
+            await player.add_roles(*suspended_roles)
             print(f'removed roles for {player.name}')
             message += f'{player.name}\n'
         await send_message(ctx, message)
@@ -171,20 +177,21 @@ async def purge_inactive(ctx):
 @bot.command(name='purgeinactivegm')
 async def purge_inactive_gm(ctx):
     print('-'*50)
-    mod_role = get_role(ctx, 'mod_role')
-    if mod_role not in ctx.author.roles:
+    mod_roles = get_roles(ctx, 'mod_role')
+    if mod_roles not in ctx.author.roles:
         print('insufficient permissions')
         await send_message(ctx, 'you must be a mod to run this command')
         return
-    gm_role = get_role(ctx, 'gm_role')
-    suspended_role = get_role(ctx, 'suspended_role')
-    if mod_role and gm_role and suspended_role:
-        test_gms = [i for i in ctx.guild.members if (gm_role in i.roles) and (mod_role not in i.roles)]
+    gm_roles = get_roles(ctx, 'gm_role')
+    if mod_roles and gm_roles:
+        test_gms = []
+        for gm_role in gm_roles:
+            test_gms.append([i for i in ctx.guild.members if (gm_role in i.roles) and (mod_roles[0] not in i.roles)])
         fcollection = fclient.get_collection(str(ctx.guild.id))
         inactive = fclient.get_inactive_gms(fcollection,test_gms)
         message = 'purged gms : \n'
         for gm in inactive:
-            await gm.remove_roles(gm_role)
+            await gm.remove_roles(*gm_roles)
             print(f'removed role for {gm.name}')
             message += f'{gm.name}\n'
         await send_message(ctx, message)
