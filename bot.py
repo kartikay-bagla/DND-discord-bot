@@ -106,11 +106,11 @@ async def set_channel(ctx, channel: discord.TextChannel):
 @bot.command(name='loadmembers')
 async def set_logger(ctx):
     print('-'*50)
-    player_roles = get_roles(ctx, 'player_role')
+    player_roles = list(get_roles(ctx, 'player_role'))
     if player_roles:
         dnd_players = []
         for player_role in player_roles:
-            dnd_players.append([i for i in ctx.guild.members if (not i.bot) and (player_role in i.roles)])
+            dnd_players.extend([i for i in ctx.guild.members if (not i.bot) and (player_role in i.roles)])
         count = log_firebase(ctx, dnd_players)
         print(f'{count} players logged')
         await send_message(ctx,f'{count} players logged')
@@ -120,13 +120,13 @@ async def set_logger(ctx):
 
 # logging
 @bot.command(name='logsession')
-async def log_session(ctx, *players: discord.Member):
+async def log_session(ctx, time, *players: discord.Member):
     print('-'*50)
-    gm_roles = get_roles(ctx, 'gm_role')
+    gm_roles = list(get_roles(ctx, 'gm_role'))
     if not gm_roles:
         await send_message(ctx,'No gm role set')
         print('No gm role set')
-    elif gm_roles not in ctx.author.roles:
+    elif gm_roles[0] not in ctx.author.roles:
         await send_message(ctx,'Command can only be used by gms')
         print('Command can only be used by gms')
     elif not players:
@@ -134,7 +134,7 @@ async def log_session(ctx, *players: discord.Member):
         print('No players entered')
     else:
         fcollection = fclient.get_collection(str(ctx.guild.id))
-        fclient.log_session(fcollection,list(players), ctx.author)
+        fclient.log_session(fcollection,list(players), ctx.author, time)
         message = f'Session logged for:\n'
         ps = [i.id for i in players]
         print(f"logged session for : {ps}")
@@ -148,18 +148,18 @@ async def log_session(ctx, *players: discord.Member):
 @bot.command(name='purgeinactive')
 async def purge_inactive(ctx):
     print('-'*50)
-    mod_roles = get_roles(ctx, 'mod_role')
-    if mod_roles not in ctx.author.roles:
+    mod_roles = list(get_roles(ctx, 'mod_role'))
+    if mod_roles[0] not in ctx.author.roles:
         print('insufficient permissions')
         await send_message(ctx, 'you must be a mod to run this command')
         return
-    player_roles = get_roles(ctx, 'player_role')
-    gm_roles = get_roles(ctx, 'gm_role')
-    suspended_roles = get_roles(ctx, 'suspended_role')
+    player_roles = list(get_roles(ctx, 'player_role'))
+    gm_roles = list(get_roles(ctx, 'gm_role'))
+    suspended_roles = list(get_roles(ctx, 'suspended_role'))
     if player_roles and mod_roles and gm_roles and suspended_roles:
         test_players = []
         for player_role in player_roles:
-            test_players.append([i for i in ctx.guild.members if (player_role in i.roles) and (mod_roles[0] not in i.roles)])
+            test_players.extend([i for i in ctx.guild.members if (player_role in i.roles) and (mod_roles[0] not in i.roles)])
         fcollection = fclient.get_collection(str(ctx.guild.id))
         inactive = fclient.get_inactive_players(fcollection,test_players)
         message = 'pruged : \n'
@@ -177,16 +177,16 @@ async def purge_inactive(ctx):
 @bot.command(name='purgeinactivegm')
 async def purge_inactive_gm(ctx):
     print('-'*50)
-    mod_roles = get_roles(ctx, 'mod_role')
-    if mod_roles not in ctx.author.roles:
+    mod_roles = list(get_roles(ctx, 'mod_role'))
+    if mod_roles[0] not in ctx.author.roles:
         print('insufficient permissions')
         await send_message(ctx, 'you must be a mod to run this command')
         return
-    gm_roles = get_roles(ctx, 'gm_role')
+    gm_roles = list(get_roles(ctx, 'gm_role'))
     if mod_roles and gm_roles:
         test_gms = []
         for gm_role in gm_roles:
-            test_gms.append([i for i in ctx.guild.members if (gm_role in i.roles) and (mod_roles[0] not in i.roles)])
+            test_gms.extend([i for i in ctx.guild.members if (gm_role in i.roles) and (mod_roles[0] not in i.roles)])
         fcollection = fclient.get_collection(str(ctx.guild.id))
         inactive = fclient.get_inactive_gms(fcollection,test_gms)
         message = 'purged gms : \n'

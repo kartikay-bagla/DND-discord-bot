@@ -29,21 +29,25 @@ class FirebaseClient:
                 count += 1
         return count
 
-    def log_session(self, collection, players : list, gm):
+    def log_session(self, collection, players : list, gm, time):
+        if(time == 'now'):
+            session_time = datetime.now(timezone.utc)
+        else:
+            session_time = datetime.utcfromtimestamp(int(time))
         players.append(gm)
         self.log_players(collection,players)
         doc_ref = collection.document(str(gm.id))
         sessions_dmed = doc_ref.get().to_dict()['sessions_dmed']
         doc_ref.update({
             'sessions_dmed': sessions_dmed+1,
-            'latest_session_dmed': datetime.now(timezone.utc)
+            'latest_session_dmed': session_time
         })
         for player in players:
             doc_ref = collection.document(str(player.id))
             sessions = doc_ref.get().to_dict()['sessions_played']
             doc_ref.update({
                 'sessions_played': sessions+1,
-                'latest_session': datetime.now(timezone.utc)
+                'latest_session': session_time
             })
     
     def get_inactive_players(self, collection, players: list):
