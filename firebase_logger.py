@@ -37,17 +37,21 @@ class FirebaseClient:
         players.append(gm)
         self.log_players(collection,players)
         doc_ref = collection.document(str(gm.id))
-        sessions_dmed = doc_ref.get().to_dict()['sessions_dmed']
+        doc_dict = doc_ref.get().to_dict()
+        sessions_dmed = doc_dict['sessions_dmed']
+        latest_session_dmed = max(session_time, doc_dict['latest_session_dmed'])
         doc_ref.update({
             'sessions_dmed': sessions_dmed+1,
-            'latest_session_dmed': session_time
+            'latest_session_dmed': latest_session_dmed
         })
         for player in players:
             doc_ref = collection.document(str(player.id))
-            sessions = doc_ref.get().to_dict()['sessions_played']
+            doc_data = doc_ref.get().to_dict()
+            sessions = doc_data['sessions_played']
+            latest_session_time = max(session_time, doc_data['latest_session'])
             doc_ref.update({
                 'sessions_played': sessions+1,
-                'latest_session': session_time
+                'latest_session': latest_session_time
             })
     
     def get_inactive_players(self, collection, players: list):
