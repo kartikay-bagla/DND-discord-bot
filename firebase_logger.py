@@ -40,7 +40,8 @@ class FirebaseClient:
         doc_dict = doc_ref.get().to_dict()
         sessions_dmed = doc_dict['sessions_dmed']
         latest_session_dmed = max(
-            session_time, doc_dict['latest_session_dmed'].astimezone(timezone.utc)
+            session_time.astimezone(timezone.utc),
+            doc_dict['latest_session_dmed'].astimezone(timezone.utc),
         )
         doc_ref.update({
             'sessions_dmed': sessions_dmed+1,
@@ -51,7 +52,8 @@ class FirebaseClient:
             doc_data = doc_ref.get().to_dict()
             sessions = doc_data['sessions_played']
             latest_session_time = max(
-                session_time, doc_data['latest_session'].astimezone(timezone.utc)
+                session_time.astimezone(timezone.utc),
+                doc_data['latest_session'].astimezone(timezone.utc),
             )
             doc_ref.update({
                 'sessions_played': sessions+1,
