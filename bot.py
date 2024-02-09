@@ -179,12 +179,12 @@ async def purge_inactive(ctx: commands.Context):
                 [
                     i
                     for i in ctx.guild.members
-                    if (player_role in i.roles) and (mod_roles[0] not in i.roles)
+                    if (player_role in i.roles) and (mod_roles[0] not in i.roles) and (not i.bot)
                 ]
             )
         fcollection = fclient.get_collection(str(ctx.guild.id))
         inactive = fclient.get_inactive_players(fcollection, test_players)
-        message = "pruged : \n"
+        message = "purged : \n"
         for player in inactive:
             await player.remove_roles(*player_roles, *gm_roles)
             await player.add_roles(*suspended_roles)
@@ -213,7 +213,7 @@ async def purge_inactive_gm(ctx: commands.Context):
                 [
                     i
                     for i in ctx.guild.members
-                    if (gm_role in i.roles) and (mod_roles[0] not in i.roles)
+                    if (gm_role in i.roles) and (mod_roles[0] not in i.roles) and (not i.bot)
                 ]
             )
         fcollection = fclient.get_collection(str(ctx.guild.id))
