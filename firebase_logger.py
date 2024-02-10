@@ -87,7 +87,7 @@ class FirebaseClient:
         cur_date = datetime.now(timezone.utc)
         for gm in gms:
             doc_ref = collection.document(str(gm.id))
-            activity = cur_date - doc_ref.to_dict()["latest_session_dmed"]
+            activity = cur_date - doc_ref.get().to_dict()["latest_session_dmed"]
             if activity.days > 60:
                 inactive_gms.append(gm)
         return inactive_gms
