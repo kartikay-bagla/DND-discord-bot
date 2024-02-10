@@ -50,7 +50,7 @@ class FirebaseClient:
         if time == "now":
             session_time = datetime.now(timezone.utc)
         else:
-            session_time = datetime.utcfromtimestamp(int(time))
+            session_time = datetime.utcfromtimestamp(int(time)).replace(tzinfo=timezone.utc)
         players.append(gm)
         self.log_players(collection, players)
         doc_ref = collection.document(str(gm.id))
