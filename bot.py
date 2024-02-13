@@ -113,6 +113,18 @@ async def set_channel(ctx: commands.Context, channel: discord.TextChannel):
     save_preference(ctx.guild.id, "channel", channel.id)
     await send_message(ctx, f"Output channel set to {channel.mention}")
 
+@bot.command(name="setreactrolemessage")
+async def set_reactrolemessage(ctx: commands.Context, channel_id: int, message_id: int):
+    try:
+        reactrole_channel = bot.get_channel(channel_id)
+        # Fetch the message from any channel
+        reactrole_message = await reactrole_channel.fetch_message(message_id)
+        save_preference(ctx.guild.id, "reactrole_message", reactrole_message.id)
+        save_preference(ctx.guild.id, "reactrole_channel", reactrole_channel.id)
+        await send_message(ctx, f"Reacttrole channel set to {reactrole_channel.mention}")
+        await send_message(ctx, f"Reacttrole message set to {reactrole_message.jump_url}")
+    except discord.NotFound:
+        await ctx.send("Message not found.")
 
 @bot.command(name="loadmembers")
 async def set_logger(ctx: commands.Context):
@@ -196,6 +208,34 @@ async def purge_inactive(ctx: commands.Context):
         await send_message(ctx, "set valid player, mod, gm and suspended roles!")
     print("-" * 50)
 
+
+@bot.command(name="rolecleanup")
+async def role_cleanup(ctx: commands.Context):
+    print("-" * 50)
+    mod_roles = list(get_roles(ctx, "mod_role"))
+    if mod_roles[0] not in ctx.author.roles:
+        print("insufficient permissions")
+        await send_message(ctx, "you must be a mod to run this command")
+        return
+    reactrole_channel_id = get_preference(ctx.guild.id, "reactrole_channel")
+    reactrole_message_id = get_preference(ctx.guild.id, "reactrole_message")
+    try:
+        reactrole_channel = bot.get_channel(reactrole_channel_id)
+        # Fetch the message from any channel
+        reactrole_message = await reactrole_channel.fetch_message(reactrole_message_id)
+    except discord.NotFound:
+        await ctx.send("Message not found.")
+    suspended_roles = list(get_roles(ctx, "suspended_role"))
+    for reaction in reactrole_message.reactions:
+        async for user in reaction.users():
+            member = ctx.guild.get_member(user.id)
+            if member is None or any(role in member.roles for role in suspended_roles):
+                try:
+                    print(f"removed {reaction.emoji} reaction for {user.global_name}")
+                    await reaction.remove(user)
+                except discord.Forbidden:
+                    await ctx.send(f"I don't have the necessary permissions to remove reactions for {user.display_name}.")
+    await ctx.send(f"Removed reactions from all users with the {suspended_roles[0].name} role on the {reactrole_message.jump_url} message.")
 
 @bot.command(name="purgeinactivegm")
 async def purge_inactive_gm(ctx: commands.Context):
