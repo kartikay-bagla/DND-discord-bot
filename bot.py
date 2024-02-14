@@ -162,18 +162,21 @@ async def log_session(ctx: commands.Context, time, *players: discord.Member):
         print("No players entered")
     else:
         fcollection = fclient.get_collection(str(ctx.guild.id))
+        success = True
         try:
             fclient.log_session(fcollection, list(players), ctx.author, time)
         except ValueError as e:
+            success = False
             await send_message(ctx, str(e))
             traceback.print_exc()
-        message = "Session logged for:\n"
-        ps = [i.id for i in players]
-        print(f"logged session for : {ps}")
-        for i in players:
-            message += f"{i.name}\n"
-        message += f"session logged by {ctx.author.name}\n"
-        await send_message(ctx, message)
+        if success:
+            message = "Session logged for:\n"
+            ps = [i.id for i in players]
+            print(f"logged session for : {ps}")
+            for i in players:
+                message += f"{i.name}\n"
+            message += f"session logged by {ctx.author.name}\n"
+            await send_message(ctx, message)
     print("-" * 50)
 
 
