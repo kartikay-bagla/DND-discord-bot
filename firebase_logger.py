@@ -47,12 +47,27 @@ class FirebaseClient:
         gm: Union[discord.User, discord.Member],
         time: str,
     ):
+        session_time = None
         if time == "now":
             session_time = datetime.now(timezone.utc)
-        else:
-            session_time = datetime.utcfromtimestamp(int(time)).replace(
-                tzinfo=timezone.utc
-            )
+
+        if not session_time:
+            try:
+                session_time = datetime.utcfromtimestamp(int(time)).replace(
+                    tzinfo=timezone.utc
+                )
+            except ValueError:
+                pass
+
+        if not session_time:
+            try:
+                session_time = datetime.fromisoformat(time).replace(tzinfo=timezone.utc)
+            except ValueError:
+                pass
+
+        if not session_time:
+            raise ValueError(f"Unable to parse time `{time}`.")
+
         players.append(gm)
         self.log_players(collection, players)
         doc_ref = collection.document(str(gm.id))
